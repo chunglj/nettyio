@@ -14,7 +14,13 @@ import utils.SessionUtil;
 import java.util.ArrayList;
 import java.util.List;
 
+@ChannelHandler.Sharable
 public class ListGroupMembersRequestHandler extends SimpleChannelInboundHandler<ListGroupMembersRequestPacket> {
+    public static final ListGroupMembersRequestHandler INSTANCE = new ListGroupMembersRequestHandler();
+
+    private ListGroupMembersRequestHandler() {
+
+    }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ListGroupMembersRequestPacket msg) throws Exception {

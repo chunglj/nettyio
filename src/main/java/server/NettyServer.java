@@ -1,16 +1,15 @@
 package server;
 
-import codec.PacketDecoder;
-import codec.PacketEncoder;
+import client.handler.HeartBeatTimerHandler;
+import codec.PacketCodecHandler;
 import codec.Spliter;
+import handler.IMIdleStateHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
-import protoctol.request.ListGroupMembersRequestPacket;
+import io.netty.handler.timeout.IdleStateHandler;
 import server.handler.*;
 
 public class NettyServer {
@@ -25,18 +24,13 @@ public class NettyServer {
                 .childHandler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
                     protected void initChannel(NioSocketChannel ch) throws Exception {
+                        ch.pipeline().addLast(new IMIdleStateHandler());
                         ch.pipeline().addLast(new Spliter());
-                        ch.pipeline().addLast(new PacketDecoder());
-                        ch.pipeline().addLast(new LoginRequestHandler());
-                        ch.pipeline().addLast(new AuthHandler());
-                        ch.pipeline().addLast(new CreateGroupRequestHandler());
-                        ch.pipeline().addLast(new JoinGroupRequestHandler());
-                        ch.pipeline().addLast(new ListGroupMembersRequestHandler());
-                        ch.pipeline().addLast(new QuitGroupRequestHandler());
-                        ch.pipeline().addLast(new MessageRequestHandler());
-                        ch.pipeline().addLast(new LogoutRequestHandler());
-                        ch.pipeline().addLast(new PacketEncoder());
-
+                        ch.pipeline().addLast(PacketCodecHandler.INSTANCE);
+                        ch.pipeline().addLast(LoginRequestHandler.INSTANCE);
+                        ch.pipeline().addLast(HeartBeatRequestHandler.INSTANCE);
+                        ch.pipeline().addLast(AuthHandler.INSTANCE);
+                        ch.pipeline().addLast(IMHandler.INSTANCE);
                     }
                 });
         bind(serverBootstrap, 8000);

@@ -6,6 +6,7 @@ import client.handler.*;
 import codec.PacketDecoder;
 import codec.PacketEncoder;
 import codec.Spliter;
+import handler.IMIdleStateHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -39,17 +40,32 @@ public class NettyClient {
                 .option(ChannelOption.SO_KEEPALIVE, true)
                 .option(ChannelOption.TCP_NODELAY, true)
                 .handler(new ChannelInitializer<Channel>() {
-                    protected void initChannel(Channel channel) throws Exception {
-                        channel.pipeline().addLast(new Spliter());
-                        channel.pipeline().addLast(new PacketDecoder());
-                        channel.pipeline().addLast(new LoginResponseHandler());
-                        channel.pipeline().addLast(new LogoutResponseHandler());
-                        channel.pipeline().addLast(new CreateGroupResponseHandler());
-                        channel.pipeline().addLast(new JoinGroupResponseHandler());
-                        channel.pipeline().addLast(new ListGroupMembersResponseHandler());
-                        channel.pipeline().addLast(new QuitGroupResponseHandler());
-                        channel.pipeline().addLast(new MessageResponseHandler());
-                        channel.pipeline().addLast(new PacketEncoder());
+                    protected void initChannel(Channel ch) throws Exception {
+                        // 空闲检测
+                        ch.pipeline().addLast(new IMIdleStateHandler());
+
+                        ch.pipeline().addLast(new Spliter());
+                        ch.pipeline().addLast(new PacketDecoder());
+                        // 登录响应处理器
+                        ch.pipeline().addLast(new LoginResponseHandler());
+                        // 收消息处理器
+                        ch.pipeline().addLast(new MessageResponseHandler());
+                        // 创建群响应处理器
+                        ch.pipeline().addLast(new CreateGroupResponseHandler());
+                        // 加群响应处理器
+                        ch.pipeline().addLast(new JoinGroupResponseHandler());
+                        // 退群响应处理器
+                        ch.pipeline().addLast(new QuitGroupResponseHandler());
+                        // 获取群成员响应处理器
+                        ch.pipeline().addLast(new ListGroupMembersResponseHandler());
+                        // 群消息响应
+                        ch.pipeline().addLast(new GroupMessageResponseHandler());
+                        // 登出响应处理器
+                        ch.pipeline().addLast(new LogoutResponseHandler());
+                        ch.pipeline().addLast(new PacketEncoder());
+
+                        // 心跳定时器
+                        ch.pipeline().addLast(new HeartBeatTimerHandler());
                     }
                 });
         connect(bootstrap, "127.0.0.1", 8000, MAX_RETRY);
